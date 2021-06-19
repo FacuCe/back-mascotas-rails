@@ -1,6 +1,7 @@
 class V1::ProfileController < ApplicationController
   before_action :check_token, only: [:show, :create, :picture]
 
+  # si el profile no está en el seed, esto no funciona (ya funciona)
   def show
     if current_user.profile.present?
       json = current_user.profile.as_json(
@@ -32,7 +33,7 @@ class V1::ProfileController < ApplicationController
     profile = if current_user.profile.present?
                 current_user.profile
               else
-                Profile.new(user_id: current_user.id)
+                Profile.new(user_id: current_user.id) # que diferencia hay con Profile.new(user: current_user)
               end
 
     profile.assign_attributes(profile_params)

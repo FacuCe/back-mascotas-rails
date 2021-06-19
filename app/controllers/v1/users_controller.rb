@@ -8,14 +8,10 @@ class V1::UsersController < ApplicationController
       :enable,
       :disable
     ]
-
-  before_action :verify_current_user_admin,
+  
+  before_action :verify_admin_or_god,
     only: [
-      :index,
-      :grant,
-      :revoke,
-      :enable,
-      :disable
+      :index
     ]
 
   before_action :verify_selected_client,
@@ -25,40 +21,41 @@ class V1::UsersController < ApplicationController
       :enable,
       :disable
     ]
+  
+  before_action :verify_permission,
+    only: [
+      :enable,
+      :disable,
+      :grant,
+      :revoke
+    ]
 
   def index
     render(json: User.all.map(&:json), status: 200)
   end
 
   def grant
-    # TODO: Validar que los roles existan
-    params["permissions"].each { |perm| selected_user.add_role(perm) }
+    params["permissions"].each do |perm|
+      selected_user.add_role(perm) if grant_roles_permitted?(perm)
+    end
     render(status: 200)
   end
 
   def revoke
-    params["permissions"].each { |perm| selected_user.remove_role(perm) }
+    params["permissions"].each do |perm|
+      selected_user.remove_role(perm) if revoke_roles_permitted?(perm)
+    end
     render(status: 200)
   end
 
-  def enabled
-    selected_user.update(enable: true)
+  def enable
+    selected_user.update(enabled: true)
     render(status: 200)
   end
 
   def disable
-    selected_user.update(enable: false)
+    selected_user.update(enabled: false)
     render(status: 200)
-  end
-
-  def create
-    user = User.new(user_params)
-
-    if user.save
-      render(json: { token: user.token }, status: 200)
-    else
-      render(json: format_error(request.path, user.errors.full_messages), status: 401)
-    end
   end
 
   def current
@@ -66,9 +63,5 @@ class V1::UsersController < ApplicationController
     json.delete(:enabled)
 
     render(json: json, status: 200)
-  end
-
-  def user_params
-    params.require(:user).permit(:name, :login, :password)
   end
 end

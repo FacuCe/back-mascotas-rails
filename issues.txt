@@ -1,0 +1,8 @@
+prueba 1
+Al registrar usuario hay problemas en rails (resuelto)
+
+prueba 2
+Al registrar un usuario y entrar al perfil hay problemas (resuelto). Antes solo funcionaban si creaba un Profile en el archivo seeds.rb
+
+prueba 3
+seria bueno que cuando registre un usuario me de un permiso por defecto (permiso 'user')

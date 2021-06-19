@@ -2,8 +2,22 @@ class V1::UserController < ApplicationController
 
   before_action :check_token, only: [:signout, :password]
 
+  before_action :check_friend, only: [:add_friend, :solicitude, :delete_friend]
+
+  before_action :check_enabled, only: [:add_friend, :solicitude, :delete_friend]
+
+  # este create lo pase aca desde users_controller.rb
+  def create
+    user = User.new(user_params)
+    if user.save
+      render(json: { token: user.generate_token! }, status: 200)
+    else
+      render(json: format_error(request.path, user.errors.full_messages), status: 401)
+    end
+  end
+
   def signin
-    user = User.enabled.find_by(login: user_params[:login])
+    user = User.find_by(login: user_params[:login])
 
     if user.present? && user.valid_password?(user_params[:password])
       render(json: { token: user.generate_token! }, status: 200)
@@ -33,9 +47,48 @@ class V1::UserController < ApplicationController
     end
   end
 
+  # Nuevas funcionalidades
+  def add_friend
+    if current_user.send_solicitude(new_friend)
+      render(status: 200)
+    else
+      render(json: format_error(request.path, 'No se pueden enviar la solicitud de amistad'), status: 401)
+    end
+  end
+
+  def solicitude
+    if current_user.evaluate_solicitude(new_friend, friend_params[:option])
+      render(status: 200)
+    else
+      render(json: format_error(request.path, 'No se pudo aceptar/rechazar la solicitud de amistad'))
+    end
+  end
+
+  def delete_friend
+    if current_user.remove_friend(new_friend)
+      render(status: 200)
+    else
+      render(json: format_error(request.path, 'No se pudo eliminar el usuario elegido de sus amigos'), status: 401)
+  end
+
   private
 
+  # agrego :name para usarlo en el create
   def user_params
-    params.require(:user).permit(:login, :password)
+    params.require(:user).permit(:name, :login, :password)
+  end
+
+  def friend_params
+    params.require(:user).permit(:login, :option)
+  end
+
+  def check_friend
+    return if new_friend.present?
+
+    render(json: format_error(request.path, 'No existe el usuario'), status: 401)
+  end
+
+  def new_friend
+    User.find_by(login: friend_params[:login])
   end
 end

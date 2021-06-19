@@ -6,11 +6,20 @@
 #   movies = Movie.create([{ name: 'Star Wars' }, { name: 'Lord of the Rings' }])
 #   Character.create(name: 'Luke', movie: movies.first)
 
-role = Role.create!(name: 'admin')
-user = User.create(name: 'Foo', login: 'admin', password: 'Admin1234')
-user.add_role(role)
-Profile.create(user_id: user.id)
+# agrego rol predeterminado para usuarios comunes
+Role.create!(name: 'user')
+Role.create!(name: 'admin')
+Role.create!(name: 'god')
 
-['Mendoza', 'Buenos Aires', "Cordoba"].each do |prov|
+user = User.create!(name: 'elpepe', login: 'usuario pepe', password: 'Elpepe1234')
+
+user = User.create!(name: 'Foo', login: 'admin', password: 'Admin1234')
+user.add_role('admin')
+
+user = User.create!(name: 'God', login: 'god', password: 'God123456')
+user.add_role('god')
+user.add_role('admin')
+
+['Mendoza', 'Buenos Aires', "Cordoba", "San Juan", "San Luis", "Catamarca", "Salta", "Jujuy"].each do |prov|
   Province.create!(name: prov)
 end

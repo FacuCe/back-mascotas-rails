@@ -1,5 +1,6 @@
 class V1::PetController < ApplicationController
   before_action :check_token, only: [:index, :show, :create, :update, :destroy]
+  before_action :check_enabled, only: [:index, :show, :create, :update, :destroy]
   before_action :check_pet, only: [:show, :update, :destroy]
 
   def index
