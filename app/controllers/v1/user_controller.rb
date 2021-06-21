@@ -1,6 +1,6 @@
 class V1::UserController < ApplicationController
 
-  before_action :check_token, only: [:signout, :password]
+  before_action :check_token, only: [:signout, :password, :add_friend, :solicitude, :delete_friend, :friend_list]
 
   before_action :check_friend, only: [:add_friend, :solicitude, :delete_friend]
 
@@ -52,7 +52,7 @@ class V1::UserController < ApplicationController
     if current_user.send_solicitude(new_friend)
       render(status: 200)
     else
-      render(json: format_error(request.path, 'No se pueden enviar la solicitud de amistad'), status: 401)
+      render(json: format_error(request.path, 'No es posible enviar la solicitud de amistad'), status: 401)
     end
   end
 
@@ -69,6 +69,22 @@ class V1::UserController < ApplicationController
       render(status: 200)
     else
       render(json: format_error(request.path, 'No se pudo eliminar el usuario elegido de sus amigos'), status: 401)
+    end
+  end
+
+  def friend_list
+    user_friend_list = UserFriend.where(user_id: current_user.id, accepted: true).pluck(:friend_id)
+    user_friend_list += UserFriend.where(friend_id: current_user.id, accepted: true).pluck(:user_id)
+    json = User.where(id: user_friend_list).except(:password, :enable)
+
+    render(json: json, status: 200)
+  end
+
+  def pending_solicitudes
+    received_solicitudes_user_ids = UserFriend.where(friend_id: current_user.id, accepted: false).pluck(:user_id)
+    json = User.where(id: received_solicitudes_user_ids).except(:password, :enable)
+
+    render(json: json, status: 200)
   end
 
   private

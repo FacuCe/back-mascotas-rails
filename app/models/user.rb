@@ -92,10 +92,11 @@ class User < ApplicationRecord
 
   # aceptar o rechazar solicitud de amistad
   def evaluate_solicitude(friend, option)
+
     return false if !pending_received_solicitudes.include?(friend)
 
     user_friend = UserFriend.where(user_id: friend.id, friend_id: id).first
-
+    
     # option == true --> aceptar solicitud
     if option
       user_friend.accepted = true

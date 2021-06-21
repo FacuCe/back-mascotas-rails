@@ -21,7 +21,7 @@
 # GET /v1/user
 
 # Funcionalidad 2
-# Un usuario puede agregar amigos (falta el controlador y los endpoints)
+# Un usuario puede agregar amigos
 # Un usuario puede enviar mensajes a sus amigos (falta todo)
 
 
@@ -38,7 +38,8 @@ Rails.application.routes.draw do
         post :add_friend
         post :solicitude
         post :delete_friend
-        get :friend_list # falta implementar
+        get :friend_list
+        get :pending_solicitudes
       end
     end
 
