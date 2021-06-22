@@ -1,10 +1,12 @@
 class V1::UserController < ApplicationController
 
-  before_action :check_token, only: [:signout, :password, :add_friend, :solicitude, :delete_friend, :friend_list]
+  before_action :check_token, only: [:signout, :password, :add_friend, :solicitude, :delete_friend, :friend_list, :send_message, :load_messages]
 
   before_action :check_friend, only: [:add_friend, :solicitude, :delete_friend]
 
-  before_action :check_enabled, only: [:add_friend, :solicitude, :delete_friend]
+  before_action :check_enabled, only: [:add_friend, :solicitude, :delete_friend, :send_message]
+
+  before_action :check_friend_to_chat, only: [:send_message, :load_messages]
 
   # este create lo pase aca desde users_controller.rb
   def create
@@ -49,7 +51,7 @@ class V1::UserController < ApplicationController
 
   # Nuevas funcionalidades
   def add_friend
-    if current_user.send_solicitude(new_friend)
+    if current_user.send_solicitude(selected_friend)
       render(status: 200)
     else
       render(json: format_error(request.path, 'No es posible enviar la solicitud de amistad'), status: 401)
@@ -57,7 +59,7 @@ class V1::UserController < ApplicationController
   end
 
   def solicitude
-    if current_user.evaluate_solicitude(new_friend, friend_params[:option])
+    if current_user.evaluate_solicitude(selected_friend, friend_params[:option])
       render(status: 200)
     else
       render(json: format_error(request.path, 'No se pudo aceptar/rechazar la solicitud de amistad'))
@@ -65,7 +67,7 @@ class V1::UserController < ApplicationController
   end
 
   def delete_friend
-    if current_user.remove_friend(new_friend)
+    if current_user.remove_friend(selected_friend)
       render(status: 200)
     else
       render(json: format_error(request.path, 'No se pudo eliminar el usuario elegido de sus amigos'), status: 401)
@@ -87,6 +89,32 @@ class V1::UserController < ApplicationController
     render(json: json, status: 200)
   end
 
+  # chat
+  def send_message
+    if current_user.send_message(friend_to_chat, message_params[:content])
+      render(status: 200)
+    else
+      render(json: format_error(request.path, 'No se pudo enviar el mensaje'), status: 401)
+    end
+  end
+
+  def load_messages
+    message_list = current_user.load_messages(friend_to_chat)
+    if message_list.empty?
+      render(json: format_error(request.path, 'Sin mensajes'), status: 401)
+    else
+      messages = message_list.map do |message|
+                  msg = message.attributes
+                  msg.delete_if do |key|
+                    key == 'id' || key == 'updated_at' || key == 'user_friend_id'
+                  end
+                  msg
+                end
+
+      render(json: messages, status: 200)
+    end
+  end
+
   private
 
   # agrego :name para usarlo en el create
@@ -99,12 +127,26 @@ class V1::UserController < ApplicationController
   end
 
   def check_friend
-    return if new_friend.present?
+    return if selected_friend.present?
 
     render(json: format_error(request.path, 'No existe el usuario'), status: 401)
   end
 
-  def new_friend
+  def selected_friend
     User.find_by(login: friend_params[:login])
+  end
+
+  def message_params
+    params.require(:message).permit(:login, :content)
+  end
+
+  def friend_to_chat
+    User.find_by(login: message_params[:login])
+  end
+
+  def check_friend_to_chat
+    return if friend_to_chat.present?
+
+    render(json: format_error(request.path, 'No existe el usuario'), status: 401)
   end
 end

@@ -10,7 +10,16 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_06_16_191146) do
+ActiveRecord::Schema.define(version: 2021_06_22_185529) do
+
+  create_table "messages", force: :cascade do |t|
+    t.text "content"
+    t.string "from"
+    t.integer "user_friend_id"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["user_friend_id"], name: "index_messages_on_user_friend_id"
+  end
 
   create_table "permissions", force: :cascade do |t|
     t.integer "user_id"

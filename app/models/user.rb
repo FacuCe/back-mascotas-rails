@@ -120,9 +120,9 @@ class User < ApplicationRecord
   end
 
   # buscar amigo (no lo uso por ahora)
-  def search_friend(friend)
-    return User.find_by(id: friend_id) if (is_my_friend?(friend))
-  end
+  # def search_friend(friend)
+  #   return User.find_by(id: friend_id) if (is_my_friend?(friend))
+  # end
 
   # pregunto si es mi amigo
   def is_my_friend?(friend)
@@ -143,5 +143,29 @@ class User < ApplicationRecord
     pending_ids.map do |p_id|
       User.find_by(id: p_id)
     end
+  end
+
+
+  # enviar mensaje
+  def send_message(friend, content)
+    return false if !is_my_friend?(friend)
+
+    u_f = UserFriend.search_by_ids(id, friend.id)
+
+    return false if u_f.blank?
+
+    message = Message.new(content: content, user_friend: u_f, from: name)
+    message.save
+  end
+
+  # actualizar chat
+  def load_messages(friend)
+    return if !is_my_friend?(friend)
+
+    u_f = UserFriend.search_by_ids(id, friend.id)
+
+    return if u_f.blank?
+
+    u_f.messages
   end
 end

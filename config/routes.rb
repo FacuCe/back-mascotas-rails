@@ -18,7 +18,6 @@
 # Un usuario con permiso de admin puede habilitar o deshabilitar usuarios con permiso user, pero no con permiso admin
 # Un usuario con permiso de god puede revocar permiso de un admin
 # Si soy admin puedo listar usuarios, luego habilitarlos o deshabilitarlos, dar o revocar permisos
-# GET /v1/user
 
 # Funcionalidad 2
 # Un usuario puede agregar amigos
@@ -35,11 +34,15 @@ Rails.application.routes.draw do
         post :signin
         get :signout
         # Funcionalidades nuevas
+        # 2
         post :add_friend
         post :solicitude
         post :delete_friend
         get :friend_list
         get :pending_solicitudes
+
+        post :send_message
+        post :load_messages  # /v1/user/load_messages/[:login]
       end
     end
 
