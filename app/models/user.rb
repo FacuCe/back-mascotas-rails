@@ -91,81 +91,83 @@ class User < ApplicationRecord
   end
 
   # aceptar o rechazar solicitud de amistad
-  def evaluate_solicitude(friend, option)
+  def evaluate_solicitude(friend, selected_option)
+    user_friend = UserFriend.where(user_id: friend.id, friend_id: id, accepted: false).first
 
-    return false if !pending_received_solicitudes.include?(friend)
-
-    user_friend = UserFriend.where(user_id: friend.id, friend_id: id).first
+    return false if user_friend.blank?
     
-    # option == true --> aceptar solicitud
-    if option
+    # selected_option == true --> aceptar solicitud
+    if selected_option
       user_friend.accepted = true
       return user_friend.save
     else
-      return !user_friend.destroy.blank?
+      return user_friend.destroy.present?
     end
   end
 
   # eliminar amigo
   def remove_friend(friend)
-    return false if !is_my_friend?(friend)
-
-    user_friend = if UserFriend.where(user_id: id, friend_id: friend.id).empty?
-                    UserFriend.where(user_id: friend.id, friend_id: id).first
-                  else
-                    UserFriend.where(user_id: id, friend_id: friend.id).first
-                  end
-    
-    return !user_friend.destroy.blank?
+    return false if my_friend(friend).blank?
+    return my_friend(friend).destroy.present?
   end
 
-  # buscar amigo (no lo uso por ahora)
-  # def search_friend(friend)
-  #   return User.find_by(id: friend_id) if (is_my_friend?(friend))
-  # end
-
-  # pregunto si es mi amigo
-  def is_my_friend?(friend)
-    UserFriend.confirmed_relationship?(id, friend.id)
+  # buscar relacion de amigos entre usuarios
+  def my_friend(friend)
+    @my_friend ||= UserFriend.confirmed_relationship(id, friend.id)
   end
 
-  # solicitudes enviadas pendientes
-  def pending_sended_solicitudes
-    pending_friends_id = UserFriend.where(user_id: id, accepted: false).pluck(:friend_id)
-    pending_friends_id.map do |f_id|
-      User.find_by(id: f_id)
-    end
+  # lista de amigos
+  def get_friend_list
+    user_friend_list_ids = UserFriend.where(user_id: id, accepted: true).pluck(:friend_id)
+    user_friend_list_ids += UserFriend.where(friend_id: id, accepted: true).pluck(:user_id)
+    User.where(id: user_friend_list_ids)
   end
-
-  # solicitudes recibidas pendientes
-  def pending_received_solicitudes
-    pending_ids = UserFriend.where(friend_id: id, accepted:false).pluck(:user_id)
-    pending_ids.map do |p_id|
-      User.find_by(id: p_id)
-    end
-  end
-
 
   # enviar mensaje
   def send_message(friend, content)
-    return false if !is_my_friend?(friend)
+    return false if my_friend(friend).blank?
 
-    u_f = UserFriend.search_by_ids(id, friend.id)
-
-    return false if u_f.blank?
-
-    message = Message.new(content: content, user_friend: u_f, from: name)
+    message = Message.new(content: content, user_friend: @my_friend, from: name)
     message.save
   end
 
   # actualizar chat
   def load_messages(friend)
-    return if !is_my_friend?(friend)
-
-    u_f = UserFriend.search_by_ids(id, friend.id)
-
-    return if u_f.blank?
-
-    u_f.messages
+    return if my_friend(friend).blank?
+    @my_friend.messages
   end
+
+
+
+
+
+  # lista de amigos (2da opcion)
+  # def get_friend_list
+  #   user_friends_list_ids = UserFriend.where("user_id = :user_id OR friend_id = :user_id", user_id: id).where(accepted: true).pluck(:friend_id, :user_id)
+  #   User.where(id: user_friends_list_ids)
+  # end
+
+  # solicitudes enviadas pendientes
+  # def pending_sended_solicitudes
+  #   pending_friends_id = UserFriend.where(user_id: id, accepted: false).pluck(:friend_id)
+  #   pending_friends_id.map do |f_id|
+  #     User.find_by(id: f_id)
+  #   end
+  # end
+
+  # solicitudes recibidas pendientes
+  # def pending_received_solicitude(friend)
+  #   UserFriend.where(user_id: friend.id, friend_id: id, accepted: false).first
+  # end
+
+  # def user_who_sent_me_a_solicitude(friend_id)
+  #   if UserFriend.where(user_id: friend_id, friend_id: id, accepted: false).any?
+  #     User.find_by(id: friend_id)
+  #   end
+  # end
+
+  # buscar amigo
+  # def search_friend(friend)
+  #   return User.find_by(id: friend_id) if (is_my_friend?(friend))
+  # end
 end

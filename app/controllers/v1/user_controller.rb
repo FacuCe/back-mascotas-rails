@@ -62,7 +62,7 @@ class V1::UserController < ApplicationController
     if current_user.evaluate_solicitude(selected_friend, friend_params[:option])
       render(status: 200)
     else
-      render(json: format_error(request.path, 'No se pudo aceptar/rechazar la solicitud de amistad'))
+      render(json: format_error(request.path, 'No se pudo aceptar/rechazar la solicitud de amistad'), status: 401)
     end
   end
 
@@ -75,16 +75,12 @@ class V1::UserController < ApplicationController
   end
 
   def friend_list
-    user_friend_list = UserFriend.where(user_id: current_user.id, accepted: true).pluck(:friend_id)
-    user_friend_list += UserFriend.where(friend_id: current_user.id, accepted: true).pluck(:user_id)
-    json = User.where(id: user_friend_list).except(:password, :enable)
-
-    render(json: json, status: 200)
+    render(json: current_user.get_friend_list, status: 200)
   end
 
   def pending_solicitudes
     received_solicitudes_user_ids = UserFriend.where(friend_id: current_user.id, accepted: false).pluck(:user_id)
-    json = User.where(id: received_solicitudes_user_ids).except(:password, :enable)
+    json = User.where(id: received_solicitudes_user_ids)
 
     render(json: json, status: 200)
   end
@@ -100,19 +96,7 @@ class V1::UserController < ApplicationController
 
   def load_messages
     message_list = current_user.load_messages(friend_to_chat)
-    if message_list.empty?
-      render(json: format_error(request.path, 'Sin mensajes'), status: 401)
-    else
-      messages = message_list.map do |message|
-                  msg = message.attributes
-                  msg.delete_if do |key|
-                    key == 'id' || key == 'updated_at' || key == 'user_friend_id'
-                  end
-                  msg
-                end
-
-      render(json: messages, status: 200)
-    end
+    render(json: message_list, status: 200)
   end
 
   private
@@ -149,4 +133,17 @@ class V1::UserController < ApplicationController
 
     render(json: format_error(request.path, 'No existe el usuario'), status: 401)
   end
+
+
+
+
+  # def friend_list
+  #   user_friend_list_ids = UserFriend.where(user_id: current_user.id, accepted: true).pluck(:friend_id)
+  #   user_friend_list_ids += UserFriend.where(friend_id: current_user.id, accepted: true).pluck(:user_id)
+  #   json = User.where(id: user_friend_list).except(:password, :enable)
+
+  #   # UserFriend.where("user_id = :user_id OR friend_id = :user_id", user_id: current_user.id).where(accepted: true)
+
+  #   render(json: json, status: 200)
+  # end
 end

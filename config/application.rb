@@ -36,5 +36,8 @@ module Pets
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    # Configuro la zona horaria (UTC -3)
+    config.time_zone = "Buenos Aires"
   end
 end

@@ -42,7 +42,7 @@ Rails.application.routes.draw do
         get :pending_solicitudes
 
         post :send_message
-        post :load_messages  # /v1/user/load_messages/[:login]
+        post :load_messages
       end
     end
 
